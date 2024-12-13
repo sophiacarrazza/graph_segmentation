@@ -21,15 +21,17 @@ class Grafo {
         float limiar; // Limiar para a segmentação (limites de similaridade)
         float sigma; // para a suavização
         int minSize; // tamanho mínimo de um segmento (para previnir segmentos muito pequenos)
+        UnionFind unionFind; // estrutura Union-Find para otimização
 
     public:
         Grafo(int numVertices, int numArestas, float limiar);
         void adicionarAresta(int origem, int destino, float peso);
         void construcaoGrafo(const std::string path);
-        void segmentar();
-        int encontrarRepresentante(int vertice);
-        void unirComponentes(int vertice1, int vertice2);
         void ordenarArestas();
+        void unirComponentes(int vertice1, int vertice2, float pesoAresta);
+        void segmentar();
+        float calcularDiferencaInterna(int representante);
+        float calcularDiferencaEntreComponentes(int representante1, int representante2);
         void imprimirSegmentos();
 
 };
