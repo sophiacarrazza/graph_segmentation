@@ -1,5 +1,4 @@
-
-#define IMAGE_TO_MATRIX
+#define IMAGEM_PARA_MATRIZ
 
 #include <sstream>
 #include <iostream>
@@ -10,208 +9,178 @@
 
 using namespace std;
 
-typedef unsigned char Byte;
+typedef unsigned char BytePixel;
+struct PixelRGB { // Struct que representa um pixel RGB
 
-// clear && g++ readingPPM.cc -std=c++20 && ./a.out
+    BytePixel vermelho, verde, azul;
 
-struct Pixel {
+    bool operator<(const PixelRGB& outro) { return true; } // operadores de comparação entre pixels
+    bool operator>(const PixelRGB& outro) { return true; }
+    bool operator==(const PixelRGB& outro) {
+        return this->vermelho == outro.vermelho && this->verde == outro.verde && this->azul == outro.azul;
+    }
 
-	Byte R, G, B;
-
-	bool operator<(const Pixel& p) { return true; }
-	bool operator>(const Pixel& p) { return true; }
-	bool operator == (const Pixel& p) {
-		return this->R == p.R && this->G == p.G && this->B == p.B;
-	}
-
-	friend ostream& operator<<(ostream& os, const Pixel& pixel) {
-		// NOTE: This is just to make the Matrix print prettier
-		os << pixel.R + pixel.G + pixel.B;
-		// std::ostringstream oss;
-		// oss << "(" << pixel.R << ", " << pixel.G << ", " << pixel.B << ")";
-		// os << oss.str();
-		return os;
-	}
+    // sobrecarga do operador de saída para exibir a soma dos valores RGB do pixel
+    friend ostream& operator<<(ostream& saida, const PixelRGB& pixel) {
+        saida << pixel.vermelho + pixel.verde + pixel.azul; // soma dos valores RGB
+        return saida;
+    }
 };
 
-// Function to load PGM file
-vector<vector<int>> loadPGM(const string& filename) {
+// função que carrega o arquivo PGM
+vector<vector<int>> lerPGM(const string& caminhoArquivo) {
 
-    ifstream file(filename, ios::binary);
+    ifstream arquivoEntrada(caminhoArquivo, ios::binary);
 
-    if (!file.is_open()) {
-        throw runtime_error("Cannot open file: " + filename);
+    if (!arquivoEntrada.is_open()) {
+        throw runtime_error("Não foi possível abrir o arquivo: " + caminhoArquivo); // exceção caso o arquivo não seja aberto
     }
 
-    string magicNumber;
-    file >> magicNumber;
+    string formatoArquivo;
+    arquivoEntrada >> formatoArquivo; // lê o formato do arquivo
 
-    if (magicNumber != "P2" && magicNumber != "P5") {
-        throw runtime_error("Unsupported PGM format: " + magicNumber);
+    if (formatoArquivo != "P2" && formatoArquivo != "P5") {
+        throw runtime_error("Formato de PGM não suportado: " + formatoArquivo); // exceção caso o arquivo não seja PGM
     }
 
-    // Read image dimensions and max value
-    int width, height, maxVal;
-    file >> width >> height >> maxVal;
+    int larguraImagem, alturaImagem, valorMaximo;
+    arquivoEntrada >> larguraImagem >> alturaImagem >> valorMaximo; // lê a largura, altura e o valor máximo (255)
 
-    // Skip single whitespace
-    file.ignore();
+    arquivoEntrada.ignore();
 
-    // Prepare a matrix to hold the pixel data
-	vector<vector<int>> image(height, vector<int>(width));
+    vector<vector<int>> imagemEscalaCinza(alturaImagem, vector<int>(larguraImagem));
 
-	if (magicNumber == "P2") {
-
-		// ASCII format
-		for (int i = 0; i < height; i++) {
-			for (int j = 0; j < width; j++) {
-				file >> image[i][j];
-			}
-		}
-	}
-
-	else if (magicNumber == "P5") {
-
-		// Binary format
-		for (int i = 0; i < height; i++) {
-			for (int j = 0; j < width; j++) {
-				image[i][j] = file.get();
-			}
-		}
-	}
-
-	file.close();
-
-	return image;
-}
-
-void convertPngToPpm(const string& inputFile, const string& outputFile) {
-
-    // Construct the Python command
-    string command = "python3 png_to_ppm.py \"" + inputFile + ".png\" \"" + outputFile + ".ppm\"";
-
-    // Execute the command
-    int result = system(command.c_str());
-
-	// Check if the command executed successfully
-	if (result != 0) {
-		cerr << "Error occurred while attempting to convert the file." << endl;
-	}
-}
-
-void applyGaussian(const string& inputFile, const string& outputFile, float sigma) {
-
-    // Construct the Python command
-    string command = "python3 gaussian.py \"" + inputFile + ".ppm\" \"" + outputFile + ".ppm\" " + to_string(sigma);
-
-    // Execute the command
-    int result = system(command.c_str());
-
-	// Check if the command executed successfully
-	if (result != 0) {
-		cerr << "Error occurred while attempting to convert the file." << endl;
-	}
-}
-
-// Function to load PPM file
-vector<vector<Pixel>> loadPPM(const string& filename, float sigma, bool debug = false) {
-
-	convertPngToPpm(filename, filename);
-
-	applyGaussian(filename, filename, sigma);
-
-    ifstream file(filename + ".ppm", ios::binary);
-
-    if (!file.is_open()) {
-        throw runtime_error("Cannot open file: " + filename);
+    if (formatoArquivo == "P2") {
+        for (int linha = 0; linha < alturaImagem; linha++) {
+            for (int coluna = 0; coluna < larguraImagem; coluna++) {
+                arquivoEntrada >> imagemEscalaCinza[linha][coluna]; // lê os valores da imagem
+            }
+        }
+    } else if (formatoArquivo == "P5") {
+        for (int linha = 0; linha < alturaImagem; linha++) {
+            for (int coluna = 0; coluna < larguraImagem; coluna++) {
+                imagemEscalaCinza[linha][coluna] = arquivoEntrada.get(); // lê os valores da imagem
+            }
+        }
     }
 
-    string magicNumber;
-    file >> magicNumber;
+    arquivoEntrada.close();
 
-    if (magicNumber != "P3" && magicNumber != "P6") {
-        throw runtime_error("Unsupported PPM format: " + magicNumber);
-    }
-
-    // Read image dimensions and max value
-    int width, height, maxVal;
-    file >> width >> height >> maxVal;
-
-    if (maxVal > 255) {
-        throw runtime_error("Only 8-bit PPM files are supported.");
-    }
-
-    // Skip single whitespace
-    file.ignore();
-
-    // Prepare a matrix to hold the pixel data
-	vector<vector<Pixel>> image(height, vector<Pixel>(width));
-
-	if (magicNumber == "P3") {
-
-		// ASCII format
-		for (int i = 0; i < height; i++) {
-			for (int j = 0; j < width; j++) {
-
-				int r, g, b;
-				file >> r >> g >> b;
-
-				image[i][j] = {(Byte)r, (Byte)g, (Byte)b};
-			}
-		}
-	}
-
-	else if (magicNumber == "P6") {
-
-		// Binary format
-		for (int i = 0; i < height; i++) {
-
-			for (int j = 0; j < width; j++) {
-
-				Pixel pixel {
-					.R = (Byte)file.get(),
-					.G = (Byte)file.get(),
-					.B = (Byte)file.get(),
-				};
-
-				image[i][j] = pixel;
-			}
-		}
-	}
-
-	file.close();
-
-	if (debug) {
-		cout << "image loaded successfully: " << image.size() << "x" << image[0].size() << "\n";
-	}
-	
-	return image;
+    return imagemEscalaCinza;
 }
 
-template<typename T>
-ostream& operator<<(ostream& os, const vector<vector<T>>& matrix) {
-	for (const auto& row : matrix) {
-		for (const auto& elem : row) {
-			os << elem << " ";
-		}
-		os << endl;
-	}
-	return os;
+// função que converte a imagem PNG para PPM usando um script Python
+void converterPNGparaPPM(const string& caminhoEntrada, const string& caminhoSaida) {
+
+    string comando = "python3 png_to_ppm.py \"" + caminhoEntrada + ".png\" \"" + caminhoSaida + ".ppm\"";
+
+    int resultadoComando = system(comando.c_str());
+
+    if (resultadoComando != 0) {
+        cerr << "Falha na conversão de PNG para PPM." << endl;
+    }
 }
 
+// função que aplica o filtro Gaussiano em uma imagem (para suavização)
+void aplicarFiltroGaussiano(const string& caminhoOrigem, const string& caminhoDestino, float sigmaFiltro) {
+
+    string comando = "python3 gaussian.py \"" + caminhoOrigem + ".ppm\" \"" + caminhoDestino + ".ppm\" " + to_string(sigmaFiltro);
+
+    int resultadoComando = system(comando.c_str());
+
+    if (resultadoComando != 0) {
+        cerr << "Falha na aplicação do filtro Gaussiano." << endl;
+    }
+}
+
+// função para carregar arquivo PPM com pré-processamento
+vector<vector<PixelRGB>> lerPPM(const string& caminhoArquivo, float sigmaGaussiano, bool habilitarDebug = false) {
+
+    converterPNGparaPPM(caminhoArquivo, caminhoArquivo); // converte o arquivo PNG para PPM
+
+    aplicarFiltroGaussiano(caminhoArquivo, caminhoArquivo, sigmaGaussiano); // aplica o filtro Gaussiano
+
+    ifstream arquivoEntrada(caminhoArquivo + ".ppm", ios::binary); // abre o arquivo PPM
+
+    if (!arquivoEntrada.is_open()) {
+        throw runtime_error("Não foi possível abrir o arquivo: " + caminhoArquivo); 
+    }
+
+    string formatoArquivo;
+    arquivoEntrada >> formatoArquivo;
+
+    if (formatoArquivo != "P3" && formatoArquivo != "P6") {
+        throw runtime_error("Formato de PPM não suportado: " + formatoArquivo);
+    }
+
+    int larguraImg, alturaImg, valorMaximo;
+    arquivoEntrada >> larguraImg >> alturaImg >> valorMaximo;
+
+    if (valorMaximo > 255) {
+        throw runtime_error("Apenas arquivos PPM de 8 bits são suportados."); // exceção para arquivos PPM de 8 bits
+    }
+
+    arquivoEntrada.ignore();
+
+    vector<vector<PixelRGB>> imagemRGB(alturaImg, vector<PixelRGB>(larguraImg));
+
+    if (formatoArquivo == "P3") { // leitura do arquivo PPM no formato ASCII
+        for (int linha = 0; linha < alturaImg; linha++) {
+            for (int coluna = 0; coluna < larguraImg; coluna++) {
+
+                int r, g, b;
+                arquivoEntrada >> r >> g >> b;
+
+                imagemRGB[linha][coluna] = {(BytePixel)r, (BytePixel)g, (BytePixel)b};
+            }
+        }
+    } else if (formatoArquivo == "P6") { // leitura do arquivo PPM no formato binário
+        for (int linha = 0; linha < alturaImg; linha++) {
+            for (int coluna = 0; coluna < larguraImg; coluna++) {
+
+                PixelRGB pixel {
+                    .vermelho = (BytePixel)arquivoEntrada.get(),
+                    .verde = (BytePixel)arquivoEntrada.get(),
+                    .azul = (BytePixel)arquivoEntrada.get(),
+                };
+
+                imagemRGB[linha][coluna] = pixel;
+            }
+        }
+    }
+
+    arquivoEntrada.close();
+
+    if (habilitarDebug) {
+        cout << "Imagem carregada com sucesso: " << imagemRGB.size() << "x" << imagemRGB[0].size() << "\n"; // exibe a imagem carregada
+    }
+
+    return imagemRGB;
+}
+
+
+template<typename TipoElemento> // sobrecarga do operador de saída para exibir as matrizes
+ostream& operator<<(ostream& saida, const vector<vector<TipoElemento>>& matriz) {
+    for (const auto& linha : matriz) {
+        for (const auto& elemento : linha) { // exibe cada elemento da matriz
+            saida << elemento << " ";
+        }
+        saida << endl;
+    }
+    return saida; 
+}
 
 int main() {
-    // Arquivos no mesmo diretório
-    string inputFile = "igreja";  
-    string outputFile = "input"; 
+
+    string arquivoOrigem = "church";
+    string arquivoDestino = "output";
 
     try {
-        convertPngToPpm(inputFile, outputFile);
-    } catch (const exception &e) {
-        cerr << "Erro: " << e.what() << endl;
+        converterPNGparaPPM(arquivoOrigem, arquivoDestino); // converte o arquivo PNG para PPM
+    } catch (const exception& erro) {
+        cerr << "Erro: " << erro.what() << endl; // exibe a mensagem de erro
         return 1;
     }
-	
 
     return 0;
 }

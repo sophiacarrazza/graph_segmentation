@@ -3,23 +3,20 @@ import sys
 
 def convert_png_to_ppm(input_file, output_file):
     try:
-        # Abrir a imagem PNG
-        image = Image.open(input_file)
+        imagem = Image.open(input_file) # abre a imagem PNG
         
-        # Converter a imagem para o modo RGB, se necessário
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
+        if imagem.mode != 'RGB': # se a imagem já não for RGB, converte
+            imagem = imagem.convert('RGB')
         
-        # Salvar como PPM
-        image.save(output_file, format='PPM')
-        print(f"Imagem convertida com sucesso: {output_file}")
+        imagem.save(output_file, format='PPM') # salva como PPM
+        print(f"Imagem convertida: {output_file}")
     except Exception as e:
         print(f"Erro ao converter PNG para PPM: {e}")
 
-if __name__ == "__main__":
+if __name__ == "__main__": # se o script for executado diretamente
     if len(sys.argv) != 3:
-        print("Uso: python3 pngToPpm.py <arquivo_entrada.png> <arquivo_saida.ppm>")
+        print("Uso: python3 pngToPpm.py <arquivo_entrada.png> <arquivo_saida.ppm>") # mensagem de erro
     else:
-        input_file = sys.argv[1]
-        output_file = sys.argv[2]
-        convert_png_to_ppm(input_file, output_file)
+        input_file = sys.argv[1] # pega o nome do arquivo de entrada
+        output_file = sys.argv[2]  # pega o nome do arquivo de saída
+        convert_png_to_ppm(input_file, output_file) # chama a função de conversão

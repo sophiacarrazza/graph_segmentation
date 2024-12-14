@@ -3,39 +3,34 @@ from scipy.ndimage import gaussian_filter
 from PIL import Image
 import numpy as np
 
-def apply_gaussian_blur(input_file, output_file, sigma):
+def aplicar_desfoque_gaussiano(arquivo_entrada, arquivo_saida, desvio_padrao):
     try:
-        # Open the PPM image
-        image = Image.open(input_file)
+        imagem = Image.open(arquivo_entrada) # abre a imagem PPM
 
-        if image.format != "PPM":
-            raise ValueError("Input file is not a PPM image.")
+        if imagem.format != "PPM":
+            raise ValueError("O arquivo de entrada não é uma imagem PPM.")
 
-        # Convert the image to a NumPy array
-        image_array = np.array(image)
+        matriz_imagem = np.array(imagem) # converte a imagem para um array NumPy (matriz de pixels)
 
-        # Apply Gaussian filter to each channel separately
-        blurred_array = np.zeros_like(image_array)
-        for channel in range(image_array.shape[2]):
-            blurred_array[:, :, channel] = gaussian_filter(image_array[:, :, channel], sigma=sigma)
+        matriz_desfocada = np.zeros_like(matriz_imagem) # cria uma matriz de zeros com o mesmo formato da imagem
+        for camada in range(matriz_imagem.shape[2]): # para cada camada de cor (R, G, B)
+            matriz_desfocada[:, :, camada] = gaussian_filter(matriz_imagem[:, :, camada], sigma=desvio_padrao) # aplica o desfoque gaussiano
 
-        # Convert the blurred array back to an image
-        blurred_image = Image.fromarray(blurred_array, mode="RGB")
+        imagem_desfocada = Image.fromarray(matriz_desfocada, mode="RGB") # cria uma imagem RGB a partir do array desfocado (cria um objeto Image)
 
-        # Save the output image
-        blurred_image.save(output_file, format="PPM")
-        print(f"Blurred image saved to {output_file}")
+        imagem_desfocada.save(arquivo_saida, format="PPM") # salva a imagem desfocada
+        print(f"Imagem desfocada salva em {arquivo_saida}")
 
-    except Exception as e:
-        print(f"Error: {e}")
+    except Exception as erro:
+        print(f"Erro: {erro}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python gaussian_blur.py <input_file.ppm> <output_file.ppm> <sigma>")
+        print("Uso: python gaussian_blur.py <arquivo_entrada.ppm> <arquivo_saida.ppm> <desvio_padrao>") # mensagem de erro
         sys.exit(1)
 
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
-    sigma = float(sys.argv[3])
+    arquivo_entrada = sys.argv[1]
+    arquivo_saida = sys.argv[2]
+    desvio_padrao = float(sys.argv[3]) # converte o desvio padrão para float
 
-    apply_gaussian_blur(input_file, output_file, sigma)
+    aplicar_desfoque_gaussiano(arquivo_entrada, arquivo_saida, desvio_padrao)
