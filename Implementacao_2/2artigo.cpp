@@ -53,10 +53,8 @@ double intensityDifference(const Pixel& p1, const Pixel& p2) {
 }
 
 // Função principal para segmentação usando cortes de grafos
-std::vector<bool> graphCutSegmentation(const std::vector<Pixel>& image, int width, int height) {
+std::vector<bool> graphCutSegmentation(const std::vector<Pixel>& image, int width, int height,const double lambda,const double sigma) {
     const int numPixels = width * height;
-    const double lambda = 10.0; // Peso para o termo regional
-    const double sigma = 30.0; // Parâmetro para penalizar diferenças de intensidade
 
     // Grafo do MaxFlow
     Graph<double, double, double> graph(numPixels, numPixels * 4);
@@ -106,6 +104,9 @@ int main() {
     try {
         int width, height;
         std::vector<Pixel> image = loadPPM("input.ppm", width, height);
+        const double lambda = 10.0; // Peso para o termo regional
+        const double sigma = 30.0; // Parâmetro para penalizar diferenças de intensidade
+        
         std::vector<bool> segmentation = graphCutSegmentation(image, width, height);
         savePPM("output.ppm", segmentation, width, height);
 
