@@ -24,7 +24,7 @@ void converterPNGparaPPM(const string& caminhoEntrada, const string& caminhoSaid
 
 int main() {
 
-    string arquivoOrigem = "./img/caoFiltro";
+    string arquivoOrigem = "./img/igFiltro";
     string arquivoDestino = "./ppms/output";
 
     try {
