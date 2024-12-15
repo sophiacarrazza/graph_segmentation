@@ -124,6 +124,8 @@
     "stop_token": "cpp",
     "thread": "cpp",
     "__nullptr": "cpp",
-    "__locale": "cpp"
+    "__locale": "cpp",
+    "set": "cpp",
+    "filesystem": "cpp"
   }
 }

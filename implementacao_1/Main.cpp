@@ -5,13 +5,11 @@
 #include <map>
 #include <fstream>
 #include <sstream>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <map>
+#include <cstdlib>
+
 
 struct Edge {
-    int u, v;
+    int u, v; //verticie de origem e de destino     
     float weight;
 };
 
@@ -53,13 +51,14 @@ bool compareEdges(const Edge& e1, const Edge& e2) {
 
 // Função para segmentação de imagem
 std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& image, int width, int height, float k) {
+
     int num_pixels = width * height;
-    std::vector<Edge> edges;
+    std::vector<Edge> edges;//Grafo representado por uma lista de arestas
 
     // Construir as arestas com base na diferença de cor entre pixels adjacentes
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            int u = y * width + x;
+            int u = y * width + x;// constroi o id do pixel 
 
             // Conectar à direita
             if (x < width - 1) {
@@ -68,7 +67,7 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
                 float dg = image[y][x][1] - image[y][x + 1][1]; // Diferença no canal G
                 float db = image[y][x][2] - image[y][x + 1][2]; // Diferença no canal B
                 float weight = std::sqrt(dr * dr + dg * dg + db * db);
-                if (weight < 4.0f) {
+                if (weight < 3.0999f) {
                     weight = 0.0f; // Marcar como iguais
                 }
                 edges.push_back({u, v, weight});
@@ -81,7 +80,7 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
                 float dg = image[y][x][1] - image[y + 1][x][1];
                 float db = image[y][x][2] - image[y + 1][x][2];
                 float weight = std::sqrt(dr * dr + dg * dg + db * db);
-                if (weight < 4.0f) {
+                if (weight < 3.0999f) {
                     weight = 0.0f;
                 }
                 edges.push_back({u, v, weight});
@@ -94,7 +93,7 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
                 float dg = image[y][x][1] - image[y + 1][x + 1][1];
                 float db = image[y][x][2] - image[y + 1][x + 1][2];
                 float weight = std::sqrt(dr * dr + dg * dg + db * db);
-                if (weight < 4.0f) {
+                if (weight < 3.0999f) {
                     weight = 0.0f;
                 }
                 edges.push_back({u, v, weight});
@@ -107,7 +106,7 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
                 float dg = image[y][x][1] - image[y + 1][x - 1][1];
                 float db = image[y][x][2] - image[y + 1][x - 1][2];
                 float weight = std::sqrt(dr * dr + dg * dg + db * db);
-                if (weight < 4.0f) {
+                if (weight < 3.0999f) {
                     weight = 0.0f;
                 }
                 edges.push_back({u, v, weight});
@@ -121,24 +120,32 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
     // Inicializar os componentes com cores únicas
     std::vector<Component> components(num_pixels);
     for (int i = 0; i < num_pixels; ++i) {
-        components[i] = {i, 1, 0.0f, i}; // Cada pixel é um componente inicialmente
+        components[i] = {i, 1, 0.0f, i}; // Cada pixel (verticie) é um componente inicialmente
     }
 
     // Algoritmo de Kruskal para segmentação com critérios de fusão
-    int color_counter = num_pixels;
-    for (const auto& edge : edges) {
-        int u_root = findRoot(components, edge.u);
-        int v_root = findRoot(components, edge.v);
 
-        if (u_root != v_root) {
-            float threshold_u = components[u_root].max_weight + k / components[u_root].size;
-            float threshold_v = components[v_root].max_weight + k / components[v_root].size;
-            
-            if (edge.weight <= std::min(threshold_u, threshold_v)) {
-                mergeComponents(components, u_root, v_root, edge.weight, color_counter++);
-            }
+    int color_counter = num_pixels; //incialmente todo pixel e um componente
+
+    for (const auto& edge : edges) {
+    int u_root = findRoot(components, edge.u);
+    int v_root = findRoot(components, edge.v);
+
+    if (u_root != v_root) {//verifica se estao em componentes disjuntos
+
+        // Calcular a diferença interna dos componentes
+        float internal_diff_u = components[u_root].max_weight + k / components[u_root].size;
+        float internal_diff_v = components[v_root].max_weight + k / components[v_root].size;
+
+    
+        // Se o peso da aresta for pequeno em comparação com a diferença interna, realizar a fusão
+        if (edge.weight <= std::min(internal_diff_u, internal_diff_v)) {
+            // Fusão dos componentes u e v
+            mergeComponents(components, u_root, v_root, edge.weight, color_counter++);
         }
     }
+}
+
 
     // Atribuir o rótulo final com base na cor dos componentes
     std::vector<int> labels(num_pixels);
@@ -149,9 +156,9 @@ std::vector<int> segmentImage(const std::vector<std::vector<std::vector<int>>>& 
     return labels;
 }
 
-
 bool loadPPM(const std::string &filename, std::vector<std::vector<std::vector<int>>> &image, int &width, int &height) {
-    std::ifstream file(filename, std::ios::binary); // Abre o arquivo no modo binário
+    
+    std::ifstream file(filename, std::ios::binary); 
     if (!file.is_open()) {
         std::cerr << "Erro ao abrir o arquivo PPM!" << std::endl;
         return false;
@@ -164,7 +171,6 @@ bool loadPPM(const std::string &filename, std::vector<std::vector<std::vector<in
         return false;
     }
 
-    // Ignorar comentários
     char nextChar;
     file.get(nextChar);
     while (nextChar == '#') {
@@ -172,22 +178,21 @@ bool loadPPM(const std::string &filename, std::vector<std::vector<std::vector<in
         std::getline(file, comment);
         file.get(nextChar);
     }
-    file.unget(); // Retorna um caractere para o stream
+    file.unget(); 
 
-    // Ler dimensões e valor máximo
     int max_value;
     file >> width >> height >> max_value;
-    file.get(); // Consome o caractere de nova linha após o cabeçalho
+    file.get(); 
 
     if (width <= 0 || height <= 0 || max_value != 255) {
         std::cerr << "Dimensões ou valor máximo inválido no arquivo PPM!" << std::endl;
         return false;
     }
 
-    // Inicializar a imagem
+    // Inicializar a imagem  [height][widht][rgb[3]]
     image.resize(height, std::vector<std::vector<int>>(width, std::vector<int>(3)));
 
-    // Lê os dados RGB
+    // Para cada pixel armazena os dados sobre o rgb dele
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             unsigned char rgb[3];
@@ -203,6 +208,7 @@ bool loadPPM(const std::string &filename, std::vector<std::vector<std::vector<in
 
     return true;
 }
+
 // Função para salvar imagem segmentada em PPM
 void savePPM(const std::string &filename, const std::vector<std::vector<std::vector<int>>> &image, const std::vector<int> &labels, int width, int height) {
     std::ofstream file(filename);
@@ -213,33 +219,46 @@ void savePPM(const std::string &filename, const std::vector<std::vector<std::vec
     file << "255\n";
     
     std::map<int, std::vector<int>> color_map;
-    
+
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             int label = labels[y * width + x];
+
             if (color_map.find(label) == color_map.end()) {
-                color_map[label] = {rand() % 256, rand() % 256, rand() % 256};
+                int r = rand() % 256, g = rand() % 256, b = rand() % 256;
+                color_map[label] = {r, g, b};
             }
-            file.write(reinterpret_cast<const char*>(&color_map[label][0]), 3);
+            unsigned char pixel[3] = {static_cast<unsigned char>(color_map[label][0]),
+                                    static_cast<unsigned char>(color_map[label][1]),
+                                    static_cast<unsigned char>(color_map[label][2])};
+        file.write(reinterpret_cast<const char*>(pixel), 3);
         }
     }
 }
 
 int main() {
-    // Carregar a imagem PPM
-    int width, height;
-    std::vector<std::vector<std::vector<int>>> image;
-    if (!loadPPM("input.ppm", image, width, height)) {
-        return -1;
-    }
 
-    // Segmentar a imagem
-    float k = 500.0f;
+    int width, height;
+
+    std::vector<std::vector<std::vector<int>>> image; // estrutura para armazenar uma imagem representada por uma matriz tridimensional dinâmica
+    if (!loadPPM("./ppms/output.ppm", image, width, height)) {
+        std::cout<< "nao foi possivel abrir a imagem"<<std::endl;
+
+    }
+    std::cout<< "valor da largura: "<<width<<std::endl;
+    std::cout<< "valor da altura: "<<height<<std::endl;
+
+    // Parametros para a segmentação da imagem
+
+    float k = 300.0f;//parâmetro que influencia a formação das regiões.quanto mais baixo mais "fina"
+
+    // Segmentação da imagem
+
     std::vector<int> labels = segmentImage(image, width, height, k);
 
     // Salvar a imagem segmentada
-    savePPM("imagem_segmentada.ppm", image, labels, width, height);
-
-    std::cout << "Segmentação concluída e imagem salva como imagem_segmentada.ppm!" << std::endl;
+    savePPM("./segmentadas/segment_image.ppm", image, labels, width, height);
+    
+    std::cout<< "concluido "<<height<<std::endl;
     return 0;
 }

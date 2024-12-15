@@ -1,36 +1,60 @@
-import sys
-from scipy.ndimage import gaussian_filter
-from PIL import Image
+import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
-def aplicar_desfoque_gaussiano(arquivo_entrada, arquivo_saida, desvio_padrao):
-    try:
-        imagem = Image.open(arquivo_entrada) # abre a imagem PPM
+# Função para aplicar o filtro gaussiano
+def aplicar_filtro_gaussiano(imagem, kernel_size=(15, 15), sigma=0.8):
+    # Aplica o filtro gaussiano em cada canal da imagem se for colorida
+    if len(imagem.shape) == 3:  # Caso a imagem seja colorida
+        imagem_filtrada = cv2.GaussianBlur(imagem, kernel_size, sigma)
+    else:  # Caso a imagem seja em escala de cinza
+        imagem_filtrada = cv2.GaussianBlur(imagem, kernel_size, sigma)
+    return imagem_filtrada
 
-        if imagem.format != "PPM":
-            raise ValueError("O arquivo de entrada não é uma imagem PPM.")
+# Função de pré-processamento
+def preprocessamento_imagem(imagem_path, imagem_saida_path):
+    # Carregar a imagem
+    imagem = cv2.imread(imagem_path, cv2.IMREAD_COLOR)
 
-        matriz_imagem = np.array(imagem) # converte a imagem para um array NumPy (matriz de pixels)
+    if imagem is None:
+        print("Erro ao carregar a imagem!")
+        return None
 
-        matriz_desfocada = np.zeros_like(matriz_imagem) # cria uma matriz de zeros com o mesmo formato da imagem
-        for camada in range(matriz_imagem.shape[2]): # para cada camada de cor (R, G, B)
-            matriz_desfocada[:, :, camada] = gaussian_filter(matriz_imagem[:, :, camada], sigma=desvio_padrao) # aplica o desfoque gaussiano
+    # Converter a imagem para escala de cinza
+    imagem_cinza = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
 
-        imagem_desfocada = Image.fromarray(matriz_desfocada, mode="RGB") # cria uma imagem RGB a partir do array desfocado (cria um objeto Image)
+    # Aplicar o filtro gaussiano na imagem original (colorida) e na imagem em escala de cinza
+    imagem_filtrada_colorida = aplicar_filtro_gaussiano(imagem)
+    imagem_filtrada_cinza = aplicar_filtro_gaussiano(imagem_cinza)
 
-        imagem_desfocada.save(arquivo_saida, format="PPM") # salva a imagem desfocada
-        print(f"Imagem desfocada salva em {arquivo_saida}")
+    # Exibir as imagens
+    plt.figure(figsize=(12, 8))
 
-    except Exception as erro:
-        print(f"Erro: {erro}")
+    plt.subplot(1, 3, 1)
+    plt.imshow(cv2.cvtColor(imagem, cv2.COLOR_BGR2RGB))
+    plt.title("Imagem Original")
+    plt.axis('off')
 
-if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Uso: python gaussian_blur.py <arquivo_entrada.ppm> <arquivo_saida.ppm> <desvio_padrao>") # mensagem de erro
-        sys.exit(1)
+    plt.subplot(1, 3, 2)
+    plt.imshow(imagem_cinza, cmap='gray')
+    plt.title("Escala de Cinza")
+    plt.axis('off')
 
-    arquivo_entrada = sys.argv[1]
-    arquivo_saida = sys.argv[2]
-    desvio_padrao = float(sys.argv[3]) # converte o desvio padrão para float
+    plt.subplot(1, 3, 3)
+    plt.imshow(cv2.cvtColor(imagem_filtrada_colorida, cv2.COLOR_BGR2RGB))
+    plt.title("Imagem Filtrada (Filtro Gaussiano)")
+    plt.axis('off')
 
-    aplicar_desfoque_gaussiano(arquivo_entrada, arquivo_saida, desvio_padrao)
+    plt.tight_layout()
+    plt.show()
+
+    # Salvar a imagem filtrada
+    cv2.imwrite(imagem_saida_path, imagem_filtrada_colorida)
+    print(f"Imagem filtrada salva em: {imagem_saida_path}")
+
+# Caminho para a imagem de entrada e saída
+imagem_path = 'peras.png'  # Substitua pelo nome da sua imagem de entrada
+imagem_saida_path = 'peraFiltro.png'  # Nome do arquivo de saída
+
+# Realizar o pré-processamento
+imagem_preprocessada = preprocessamento_imagem(imagem_path, imagem_saida_path)
