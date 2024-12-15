@@ -51,6 +51,18 @@ void savePPM(const std::string& filename, const std::vector<bool>& segmentation,
 double intensityDifference(const Pixel& p1, const Pixel& p2) {
     return std::sqrt(std::pow(p1.r - p2.r, 2) + std::pow(p1.g - p2.g, 2) + std::pow(p1.b - p2.b, 2));
 }
+// Função para calcular a entropia de um histograma
+double calcular_Rp(const Pixel& pixel, const std::map<std::string, std::vector<double>>& histogramas, const std::string& tipo) {
+    double R = 0.0;
+
+    // Calcular para cada canal (R, G, B)
+    R -= std::log(histogramas["R_" + tipo][pixel.r]);
+    R -= std::log(histogramas["G_" + tipo][pixel.g]);
+    R -= std::log(histogramas["B_" + tipo][pixel.b]);
+
+    return R;
+}
+
 
 // Função principal para segmentação usando cortes de grafos
 std::vector<bool> graphCutSegmentation(const std::vector<Pixel>& image, int width, int height,const double lambda,const double sigma) {
@@ -82,9 +94,24 @@ std::vector<bool> graphCutSegmentation(const std::vector<Pixel>& image, int widt
     }
 
     // Adiciona arestas para a fonte e o sorvedouro (t-links)
+    // for (int i = 0; i < numPixels; ++i) {
+    //     double sourceWeight = lambda * (image[i].r < 128 ? 1.0 : 0.0); // Exemplo: fundo se intensidade < 128
+    //     double sinkWeight = lambda * (image[i].r >= 128 ? 1.0 : 0.0); // Exemplo: objeto se intensidade >= 128
+    //     graph.add_tweights(i, sourceWeight, sinkWeight);
+        
+    // }
+    // Adiciona arestas para a fonte e o sorvedouro (t-links) com base em Rp
     for (int i = 0; i < numPixels; ++i) {
-        double sourceWeight = lambda * (image[i].r < 128 ? 1.0 : 0.0); // Exemplo: fundo se intensidade < 128
-        double sinkWeight = lambda * (image[i].r >= 128 ? 1.0 : 0.0); // Exemplo: objeto se intensidade >= 128
+        // Obtenha os valores de R_p para o pixel atual
+        const Pixel& pixel = image[i];
+        double Rp_obj = calcular_Rp(pixel, histogramas, "obj");
+        double Rp_bkg = calcular_Rp(pixel, histogramas, "bkg");
+
+        // Multiplique por lambda para ajustar o peso
+        double sourceWeight = lambda * Rp_obj;
+        double sinkWeight = lambda * Rp_bkg;
+
+        // Adiciona os pesos ao grafo
         graph.add_tweights(i, sourceWeight, sinkWeight);
     }
 
