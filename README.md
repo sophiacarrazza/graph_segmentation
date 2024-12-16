@@ -1,7 +1,7 @@
 # Segmentação de imagens baseada em grafos
 Implementação 4 da disciplina de Teoria dos Grafos e Computabilidade - Segmentação de imagens baseada em grafos
 
-# Fluxo de Execução
+# Fluxo de Execução do segmentação baseada na técnica de Pedro F. Felzenszwalb e Daniel P. Huttenlocher
 
 1. **Input:** `input.png`
    - **Ação:** Executar o código `gaussian.py`
